@@ -39,10 +39,22 @@ export async function searchShows(query) {
   }
 }
 
-/**
- * Fetch details for a given show ID
- * Endpoint: GET /shows/:id/cast
- */
+export async function fetchShowById(showId) {
+  if (!showId) return null;
+
+  try {
+    const response = await fetch(`${BASE_URL}/shows/${showId}`);
+    if (!response.ok) {
+      throw new Error(`Show not found (Status ${response.status})`);
+    }
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error(`Error fetching show ${showId}:`, error);
+    throw error;
+  }
+}
+
 export async function fetchShowCast(showId) {
   if (!showId) return [];
 

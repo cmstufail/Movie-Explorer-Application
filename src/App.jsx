@@ -1,15 +1,25 @@
 import { useState, useEffect, useCallback } from "react";
+import { Routes, Route, useNavigate, useLocation } from "react-router-dom";
 
 import Navbar from "./components/Navbar";
-import MovieModal from "./components/MovieModal";
 import Toast from "./components/Toast";
 import HomePage from "./pages/HomePage";
 import ListingPage from "./pages/ListingPage";
 import FavoritesPage from "./pages/FavoritesPage";
 import { fetchShows, searchShows } from "./api/tvmaze";
+import MovieModalRoute from "./components/MovieModalRoute";
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState("home"); // 'home' | 'listing' | 'favorites'
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const activeTab =
+    location.pathname === "/listing"
+      ? "listing"
+      : location.pathname === "/favorites"
+        ? "favorites"
+        : "home";
+
   const [shows, setShows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -31,7 +41,6 @@ export default function App() {
   const [viewMode, setViewMode] = useState("grid");
 
   // Modal & Favorites
-  const [activeModalShow, setActiveModalShow] = useState(null);
   const [toast, setToast] = useState(null);
 
   const [favorites, setFavorites] = useState(() => {
@@ -171,72 +180,99 @@ export default function App() {
       {/* Sticky Header / Navbar */}
       <Navbar
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        setActiveTab={(tab) => navigate(tab === "home" ? "/" : `/${tab}`)}
         favoriteCount={favorites.length}
-        onQuickSearch={() => {
-          setActiveTab("listing");
-        }}
+        onQuickSearch={() => navigate("/listing")}
         theme={theme}
         onToggleTheme={handleToggleTheme}
       />
 
-      {/* Dynamic Page Views */}
+      {/* Route-based Page Views */}
       <div className="flex-1">
-        {activeTab === "home" && (
-          <HomePage
-            shows={shows}
-            loading={loading}
-            onNavigateToListing={() => setActiveTab("listing")}
-            onSelectGenre={(genre) => {
-              setSelectedGenre(genre);
-              setActiveTab("listing");
-            }}
-            onSelectDetails={(show) => setActiveModalShow(show)}
-            favorites={favorites}
-            onToggleFavorite={handleToggleFavorite}
+        <Routes location={location.state?.background || location}>
+          <Route
+            path="/"
+            element={
+              <HomePage
+                shows={shows}
+                loading={loading}
+                onNavigateToListing={() => navigate("/listing")}
+                onSelectGenre={(genre) => {
+                  setSelectedGenre(genre);
+                  navigate("/listing");
+                }}
+                onSelectDetails={(show) =>
+                  navigate(`/movie/${show.id}`, {
+                    state: { background: location },
+                  })
+                }
+                favorites={favorites}
+                onToggleFavorite={handleToggleFavorite}
+              />
+            }
           />
-        )}
 
-        {activeTab === "listing" && (
-          <ListingPage
-            shows={shows}
-            loading={loading}
-            error={error}
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            selectedGenre={selectedGenre}
-            setSelectedGenre={setSelectedGenre}
-            sortBy={sortBy}
-            setSortBy={setSortBy}
-            viewMode={viewMode}
-            setViewMode={setViewMode}
-            onSelectDetails={(show) => setActiveModalShow(show)}
-            favorites={favorites}
-            onToggleFavorite={handleToggleFavorite}
-            onRetry={loadInitialShows}
-            isSearching={isSearching}
+          <Route
+            path="/listing"
+            element={
+              <ListingPage
+                shows={shows}
+                loading={loading}
+                error={error}
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                selectedGenre={selectedGenre}
+                setSelectedGenre={setSelectedGenre}
+                sortBy={sortBy}
+                setSortBy={setSortBy}
+                viewMode={viewMode}
+                setViewMode={setViewMode}
+                onSelectDetails={(show) =>
+                  navigate(`/movie/${show.id}`, {
+                    state: { background: location },
+                  })
+                }
+                favorites={favorites}
+                onToggleFavorite={handleToggleFavorite}
+                onRetry={loadInitialShows}
+                isSearching={isSearching}
+              />
+            }
           />
-        )}
 
-        {activeTab === "favorites" && (
-          <FavoritesPage
-            favorites={favorites}
-            onSelectDetails={(show) => setActiveModalShow(show)}
-            onToggleFavorite={handleToggleFavorite}
-            onClearFavorites={handleClearFavorites}
-            onNavigateToListing={() => setActiveTab("listing")}
+          <Route
+            path="/favorites"
+            element={
+              <FavoritesPage
+                favorites={favorites}
+                onSelectDetails={(show) =>
+                  navigate(`/movie/${show.id}`, {
+                    state: { background: location },
+                  })
+                }
+                onToggleFavorite={handleToggleFavorite}
+                onClearFavorites={handleClearFavorites}
+                onNavigateToListing={() => navigate("/listing")}
+              />
+            }
           />
-        )}
+        </Routes>
       </div>
 
       {/* Interactive Movie Details Modal */}
-      {activeModalShow && (
-        <MovieModal
-          show={activeModalShow}
-          onClose={() => setActiveModalShow(null)}
-          isFavorite={favorites.some((f) => f.id === activeModalShow.id)}
-          onToggleFavorite={handleToggleFavorite}
-        />
+      {location.state?.background && (
+        <Routes>
+          <Route
+            path="/movie/:id"
+            element={
+              <MovieModalRoute
+                shows={shows}
+                favorites={favorites}
+                onToggleFavorite={handleToggleFavorite}
+              />
+            }
+          />
+        </Routes>
       )}
 
       {/* Toast Notification */}
