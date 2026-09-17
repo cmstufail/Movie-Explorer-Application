@@ -70,7 +70,9 @@ npm run preview — Locally previews the production build.
 🌐 Live Demo
 Check out the live version of the project:
 
-👉 Live Demo Link (Vercel / Netlify Link)
+👉 Github Link: https://github.com/cmstufail/Movie-Explorer-Application
+
+👉 Live Demo Link ([Vercel](https://movie-explorer-application-ecru.vercel.app/))
 
 🤝 Contributing
 Contributions are welcome! If you have any suggestions to improve this project, feel free to fork the repository and create a Pull Request.
